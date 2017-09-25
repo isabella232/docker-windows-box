@@ -1,14 +1,6 @@
-$ErrorActionPreference = 'Stop'
-$ProgressPreference = 'SilentlyContinue'
-
-$version = "17.06.0-ce-rc5"
-if ($(docker --version).StartsWith("Docker version $version")) {
-  Write-Host Already updated.
-  exit 0;
-}
-
 Write-Host "Stopping docker service"
 Stop-Service docker
+$version = "17.09.0-ce-rc2"
 
 Write-Host "Downloading docker-$version.zip"
 $wc = New-Object net.webclient
@@ -17,7 +9,14 @@ Write-Host "Extracting docker-$version.zip"
 Expand-Archive -Path "$env:TEMP\docker-$version.zip" -DestinationPath $env:ProgramFiles -Force
 Remove-Item "$env:TEMP\docker-$version.zip"
 
+Write-Host "Activating experimental features"
+$daemonJson = "$env:ProgramData\docker\config\daemon.json"
+$config = @{}
+if (Test-Path $daemonJson) {
+  $config = (Get-Content $daemonJson) -join "`n" | ConvertFrom-Json
+}
+$config = $config | Add-Member(@{ experimental = $true }) -Force -PassThru
+$config | ConvertTo-Json | Set-Content $daemonJson -Encoding Ascii
+
 Write-Host "Starting docker service"
 Start-Service docker
-
-docker version

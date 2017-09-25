@@ -1,13 +1,11 @@
-$ip=(Get-NetIPAddress -AddressFamily IPv4 `
-   | Where-Object -FilterScript { $_.InterfaceAlias -Eq "vEthernet (HNS Internal NIC)" } `
-   ).IPAddress
+docker run -d -p 8080:8080 `
+  -v //./pipe/docker_engine://./pipe/docker_engine `
+  stefanscherer/visualizer-windows:insider
 
-if (Test-Path $env:USERPROFILE\.docker\ca.pem) {
-  docker run -d -p 8080:8080 `
-    -e DOCKER_HOST=${ip}:2376 -e DOCKER_TLS_VERIFY=1 `
-    -v "$env:USERPROFILE\.docker:C:\Users\ContainerAdministrator\.docker" `
-    --name=visualizer stefanscherer/visualizer-windows
-} else {
-  docker run -d -p 8080:8080 `
-    -e DOCKER_HOST=${ip}:2375 --name=visualizer sealsystems/visualizer
-}
+# this does not work yet, see https://github.com/moby/moby/issues/34795
+#docker service create `
+#  --name=visualizer `
+#  --publish=8080:8080/tcp `
+#  --constraint=node.role==manager `
+#  --mount=type=bind,src=//./pipe/docker_engine,dst=//./pipe/docker_engine `
+#  stefanscherer/visualizer-windows:insider
